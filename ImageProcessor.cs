@@ -26,13 +26,15 @@ using Microsoft.Azure.CognitiveServices.Vision.ComputerVision;
 using Microsoft.Azure.CognitiveServices.Vision.ComputerVision.Models;
 using System.Collections.Generic;
 using Azure.Messaging.EventGrid.SystemEvents;
+using Azure.Storage;
 
 namespace SiliconValve.DemoFunctions
 {
     public static class ImageProcessor
     {
 
-        private static readonly string BLOB_STORAGE_CONNECTION_STRING = Environment.GetEnvironmentVariable("AzureWebJobsStorage");
+        private static readonly string IMAGE_STORAGE_ACCOUNT_NAME = Environment.GetEnvironmentVariable("IMAGE_STORAGE_ACCOUNT");
+        private static readonly string IMAGE_STORAGE_ACCOUNT_KEY = Environment.GetEnvironmentVariable("IMAGE_STORAGE_ACCOUNT_KEY");
 
         private static string GetBlobNameFromUrl(string bloblUrl)
         {
@@ -89,9 +91,11 @@ namespace SiliconValve.DemoFunctions
 
                 if (encoder != null)
                 {
+                    
                     var thumbnailWidth = Convert.ToInt32(Environment.GetEnvironmentVariable("THUMBNAIL_WIDTH"));
                     var thumbContainerName = Environment.GetEnvironmentVariable("THUMBNAIL_CONTAINER_NAME");
-                    var blobServiceClient = new BlobServiceClient(BLOB_STORAGE_CONNECTION_STRING);
+
+                    var blobServiceClient = new BlobServiceClient(new Uri($"{IMAGE_STORAGE_ACCOUNT_NAME}blob.core.windows.net"),new StorageSharedKeyCredential(IMAGE_STORAGE_ACCOUNT_NAME, IMAGE_STORAGE_ACCOUNT_KEY));
                     var blobContainerClient = blobServiceClient.GetBlobContainerClient(thumbContainerName);
                     var blobName = GetBlobNameFromUrl(createdEvent.Url);
 
