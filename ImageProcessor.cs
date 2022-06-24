@@ -85,25 +85,14 @@ namespace SiliconValve.DemoFunctions
 
             if (fileInput != null)
             {
+                log.LogInformation("Function received file data from input binding");
+
                 var createdEvent = eventGridEvent.ToObject<StorageBlobCreatedEventData>();
                 var extension = Path.GetExtension(createdEvent.Url);
                 var encoder = GetEncoder(extension);
 
                 if (encoder != null)
                 {
-                    
-                    var thumbnailWidth = Convert.ToInt32(Environment.GetEnvironmentVariable("THUMBNAIL_WIDTH"));
-                    var thumbContainerName = Environment.GetEnvironmentVariable("THUMBNAIL_CONTAINER_NAME");
-
-                    var blobServiceClient = new BlobServiceClient(INPUT_IMAGE_STORAGE_ACCOUNT_CONNECTION);
-                    var blobContainerClient = blobServiceClient.GetBlobContainerClient(thumbContainerName);
-                    var blobName = GetBlobNameFromUrl(createdEvent.Url);
-
-                    FontCollection collection = new();
-                    FontFamily family = collection.Add("./FivoSans-Black.otf");
-                    Font font = family.CreateFont(12, FontStyle.Regular);
-
-
                     ComputerVisionClient computerVision = new ComputerVisionClient(
                         new ApiKeyServiceClientCredentials(Environment.GetEnvironmentVariable("COMPUTER_VISION_KEY")),
                         new System.Net.Http.DelegatingHandler[] { });
@@ -115,16 +104,19 @@ namespace SiliconValve.DemoFunctions
 
                     ImageAnalysis analysis = await computerVision.AnalyzeImageInStreamAsync(fileInput);
 
-                    // Image image = ...; // Create any way you like.
+                    var thumbnailWidth = Convert.ToInt32(Environment.GetEnvironmentVariable("THUMBNAIL_WIDTH"));
+                    var thumbContainerName = Environment.GetEnvironmentVariable("THUMBNAIL_CONTAINER_NAME");
+                   
+                    
+                    // build blob client so we can write out the new image.
+                    var blobServiceClient = new BlobServiceClient(INPUT_IMAGE_STORAGE_ACCOUNT_CONNECTION);
+                    var blobContainerClient = blobServiceClient.GetBlobContainerClient(thumbContainerName);
+                    var blobName = GetBlobNameFromUrl(createdEvent.Url);
 
-                    // The options are optional
-                    TextOptions options = new(font)
-                    {
-                        Origin = new PointF(100, 100), // Set the rendering origin.
-                        TabWidth = 8, // A tab renders as 8 spaces wide
-                        WrappingLength = 100, // Greater than zero so we will word wrap at 100 pixels wide
-                        HorizontalAlignment = HorizontalAlignment.Right // Right align
-                    };
+
+                    FontCollection collection = new();
+                    FontFamily family = collection.Add("./FivoSans-Black.otf");
+                    Font font = family.CreateFont(12, FontStyle.Regular); 
 
                     log.LogInformation("Image being written to Azure Storage...");
 
