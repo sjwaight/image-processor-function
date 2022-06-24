@@ -16,7 +16,13 @@
     <PackageReference Include="SixLabors.ImageSharp.Drawing" Version="1.0.0-beta14" />
   </ItemGroup>
   <ItemGroup>
-    <None Update="host.json">
+    <Content Include="Evolventa-zLXL.ttf">
+      <Pack>true</Pack>
+      <PackagePath>Evolventa-zLXL.ttf</PackagePath>
+    </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <None Update="host.json" >
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="Evolventa-zLXL.ttf">
