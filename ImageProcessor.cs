@@ -77,15 +77,15 @@ namespace SiliconValve.DemoFunctions
 
 
         [FunctionName("ImageProcessor")]
-        public static async Task Run([EventGridTrigger]EventGridEvent eventGridEvent, 
+        public static async Task Run([EventGridTrigger]JObject eventGridEvent, 
         [Blob("{data.url}", FileAccess.Read)] Stream fileInput, 
         ILogger log)
         {
-            log.LogInformation(eventGridEvent.Data.ToString());
+            log.LogInformation("Function started and received data: " + eventGridEvent);
 
-             if (fileInput != null)
+            if (fileInput != null)
             {
-                var createdEvent = ((JObject)eventGridEvent.Data.ToString()).ToObject<StorageBlobCreatedEventData>();
+                var createdEvent = eventGridEvent.ToObject<StorageBlobCreatedEventData>();
                 var extension = Path.GetExtension(createdEvent.Url);
                 var encoder = GetEncoder(extension);
 
@@ -148,7 +148,11 @@ namespace SiliconValve.DemoFunctions
                 {
                     log.LogInformation($"No encoder support for: {createdEvent.Url}");
                 }
-            }            
+            }     
+            else
+            {
+                log.LogInformation($"No file input found.");
+            }       
         }
     }
 }
