@@ -86,7 +86,7 @@ namespace SiliconValve.DemoFunctions
         [FunctionName("ImageProcessor")]
         [StorageAccount("INPUT_IMAGE_STORAGE_ACCOUNT_CONNECTION")]
         public static async Task Run([EventGridTrigger]EventGridEvent eventGridEvent, 
-        [Blob("{data.url}", FileAccess.Read)]Stream fileInput, 
+        [Blob("{data.url}", FileAccess.Read)]Stream fileInput, ExecutionContext context,
         ILogger log)
         {
             log.LogInformation("Function started and received data: " + eventGridEvent);
@@ -137,7 +137,7 @@ namespace SiliconValve.DemoFunctions
 
 
                     FontCollection collection = new();
-                    FontFamily family = collection.Add("Evolventa-zLXL.ttf");
+                    FontFamily family = collection.Add($"{context.FunctionDirectory}\\Evolventa-zLXL.ttf");
                     Font font = family.CreateFont(30, FontStyle.Regular); 
 
                     log.LogInformation("Image being written to Azure Storage...");
