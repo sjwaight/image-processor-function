@@ -35,6 +35,14 @@ namespace SiliconValve.DemoFunctions
 
         private static readonly string INPUT_IMAGE_STORAGE_ACCOUNT_CONNECTION = Environment.GetEnvironmentVariable("INPUT_IMAGE_STORAGE_ACCOUNT_CONNECTION");
 
+        // Specify the features to return from Computer Vision
+        private static readonly IList<VisualFeatureTypes?> features =
+            new List<VisualFeatureTypes?>()
+        {
+            VisualFeatureTypes.Categories, VisualFeatureTypes.Description,
+            VisualFeatureTypes.ImageType, VisualFeatureTypes.Tags
+        };
+
         private static string GetBlobNameFromUrl(string bloblUrl)
         {
             var uri = new Uri(bloblUrl);
@@ -77,7 +85,7 @@ namespace SiliconValve.DemoFunctions
 
         [FunctionName("ImageProcessor")]
         [StorageAccount("INPUT_IMAGE_STORAGE_ACCOUNT_CONNECTION")]
-        public static async Task Run([EventGridTrigger]JObject eventGridEvent, 
+        public static async Task Run([EventGridTrigger]EventGridEvent eventGridEvent, 
         [Blob("{data.url}", FileAccess.Read)]Stream fileInput, 
         ILogger log)
         {
@@ -87,9 +95,20 @@ namespace SiliconValve.DemoFunctions
             {
                 log.LogInformation("Function received file data from input binding");
 
-                var createdEvent = eventGridEvent.ToObject<StorageBlobCreatedEventData>();
-                var extension = Path.GetExtension(createdEvent.Url);
+                //extract the storage blob specific event data from the incoming request
+                object createdEvent = null;
+                eventGridEvent.TryGetSystemEventData(out createdEvent);
+                var storageEvent = (StorageBlobCreatedEventData)createdEvent;
+
+                // determine if we have an encoder for the image type
+                var extension = Path.GetExtension(storageEvent.Url);
                 var encoder = GetEncoder(extension);
+
+                MemoryStream localCopy = new MemoryStream();
+
+                fileInput.CopyTo(localCopy);
+
+                localCopy.Position = 0;
 
                 if (encoder != null)
                 {
@@ -102,21 +121,24 @@ namespace SiliconValve.DemoFunctions
 
                     log.LogInformation("Image being analyzed by Computer Vision...");
 
-                    ImageAnalysis analysis = await computerVision.AnalyzeImageInStreamAsync(fileInput);
+                    ImageAnalysis analysis = await computerVision.AnalyzeImageInStreamAsync(localCopy, features);
 
-                    var thumbnailWidth = Convert.ToInt32(Environment.GetEnvironmentVariable("THUMBNAIL_WIDTH"));
+                    if(analysis.Description != null)
+                    {
+                       log.LogInformation($"First caption is: {analysis.Description.Captions[0].Text}"); 
+                    }
+
                     var thumbContainerName = Environment.GetEnvironmentVariable("THUMBNAIL_CONTAINER_NAME");
                    
-                    
                     // build blob client so we can write out the new image.
                     var blobServiceClient = new BlobServiceClient(INPUT_IMAGE_STORAGE_ACCOUNT_CONNECTION);
                     var blobContainerClient = blobServiceClient.GetBlobContainerClient(thumbContainerName);
-                    var blobName = GetBlobNameFromUrl(createdEvent.Url);
+                    var blobName = GetBlobNameFromUrl(storageEvent.Url);
 
 
                     FontCollection collection = new();
-                    FontFamily family = collection.Add("./FivoSans-Black.otf");
-                    Font font = family.CreateFont(12, FontStyle.Regular); 
+                    FontFamily family = collection.Add("./Evolventa-zLXL.ttf");
+                    Font font = family.CreateFont(30, FontStyle.Regular); 
 
                     log.LogInformation("Image being written to Azure Storage...");
 
@@ -125,12 +147,9 @@ namespace SiliconValve.DemoFunctions
 
                     using (var output = new MemoryStream())
                     using (var image = Image.Load(fileInput))
-                    {
-                        var divisor = image.Width / thumbnailWidth;
-                        var height = Convert.ToInt32(Math.Round((decimal)(image.Height / divisor)));
-
+                    {   
                         image.Mutate(x => x.Resize(0, image.Height * 3));
-                        image.Mutate(x => x.DrawText(analysis.Description.Captions[0].Text, font, Color.Red, new PointF(1,1)));
+                        image.Mutate(x => x.DrawText(analysis.Description.Captions[0].Text, font, Color.White, new PointF(1,1)));
                         image.Save(output, encoder);
                         output.Position = 0;
                         await blobContainerClient.UploadBlobAsync(blobName, output);
@@ -138,7 +157,7 @@ namespace SiliconValve.DemoFunctions
                 }
                 else
                 {
-                    log.LogInformation($"No encoder support for: {createdEvent.Url}");
+                    log.LogInformation($"No encoder support for: {storageEvent.Url}");
                 }
             }     
             else
