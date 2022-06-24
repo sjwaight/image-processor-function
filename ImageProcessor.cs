@@ -33,8 +33,7 @@ namespace SiliconValve.DemoFunctions
     public static class ImageProcessor
     {
 
-        private static readonly string IMAGE_STORAGE_ACCOUNT_NAME = Environment.GetEnvironmentVariable("IMAGE_STORAGE_ACCOUNT");
-        private static readonly string IMAGE_STORAGE_ACCOUNT_KEY = Environment.GetEnvironmentVariable("IMAGE_STORAGE_ACCOUNT_KEY");
+        private static readonly string INPUT_IMAGE_STORAGE_ACCOUNT_CONNECTION = Environment.GetEnvironmentVariable("INPUT_IMAGE_STORAGE_ACCOUNT_CONNECTION");
 
         private static string GetBlobNameFromUrl(string bloblUrl)
         {
@@ -77,8 +76,9 @@ namespace SiliconValve.DemoFunctions
 
 
         [FunctionName("ImageProcessor")]
+        [StorageAccount("INPUT_IMAGE_STORAGE_ACCOUNT_CONNECTION")]
         public static async Task Run([EventGridTrigger]JObject eventGridEvent, 
-        [Blob("{data.url}", FileAccess.Read)] Stream fileInput, 
+        [Blob("{data.url}", FileAccess.Read)]Stream fileInput, 
         ILogger log)
         {
             log.LogInformation("Function started and received data: " + eventGridEvent);
@@ -95,7 +95,7 @@ namespace SiliconValve.DemoFunctions
                     var thumbnailWidth = Convert.ToInt32(Environment.GetEnvironmentVariable("THUMBNAIL_WIDTH"));
                     var thumbContainerName = Environment.GetEnvironmentVariable("THUMBNAIL_CONTAINER_NAME");
 
-                    var blobServiceClient = new BlobServiceClient(new Uri($"{IMAGE_STORAGE_ACCOUNT_NAME}blob.core.windows.net"),new StorageSharedKeyCredential(IMAGE_STORAGE_ACCOUNT_NAME, IMAGE_STORAGE_ACCOUNT_KEY));
+                    var blobServiceClient = new BlobServiceClient(INPUT_IMAGE_STORAGE_ACCOUNT_CONNECTION);
                     var blobContainerClient = blobServiceClient.GetBlobContainerClient(thumbContainerName);
                     var blobName = GetBlobNameFromUrl(createdEvent.Url);
 
