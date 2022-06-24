@@ -137,7 +137,7 @@ namespace SiliconValve.DemoFunctions
 
 
                     FontCollection collection = new();
-                    FontFamily family = collection.Add("./Evolventa-zLXL.ttf");
+                    FontFamily family = collection.Add("Evolventa-zLXL.ttf");
                     Font font = family.CreateFont(30, FontStyle.Regular); 
 
                     log.LogInformation("Image being written to Azure Storage...");
