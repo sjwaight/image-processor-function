@@ -39,4 +39,4 @@ jobs:
           app-name: 'fnapp3bhgkxdxfls6o'
           slot-name: 'Production'
           package: '${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}/output'
-          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_F22FA21D51974C83A8806EA5E689DD18 }}
+          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_D9CBD91016CB4AC9A85F53F005C02297 }}
